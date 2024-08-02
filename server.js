@@ -11,8 +11,14 @@ const PORT = process.env.PORT || 3000;
 
 const upload = multer({ dest: 'uploads/' });
 
+const corsOptions = {
+  origin: 'http://dxpro-sol.com',
+  methods: 'GET,POST,PUT,DELETE',
+  allowedHeaders: 'Content-Type,Authorization'
+};
+
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors(corsOptions));
 
 app.use((req, res, next) => {
   console.log('Received request: ', req.method, req.url);
