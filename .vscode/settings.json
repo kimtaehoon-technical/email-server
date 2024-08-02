@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/0ee3616e-59bf-45f5-9db2-8f54ba544aaf/resourceGroups/dxpro-sol-backend_group/providers/Microsoft.Web/sites/dxpro-sol-backend",
+    "appService.deploySubpath": "."
+}
