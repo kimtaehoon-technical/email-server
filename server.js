@@ -43,6 +43,20 @@ app.post('/announcements', async (req, res) => {
   res.json(newAnnouncement);
 });
 
+app.delete('/announcements/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await Announcement.findByIdAndDelete(id);
+    if (!result) {
+      return res.status(404).send('Announcement not found.');
+    }
+    res.status(200).send('削除しました。');
+  } catch (error) {
+    console.error('エラーが発生しました :', error);
+    res.status(500).send('削除に失敗しました。');
+  }
+});
+
 app.post('/send-email', upload.single('file'), async (req, res) => {
   console.log('Request body: ', req.body);
   console.log('Received file: ', req.file);
