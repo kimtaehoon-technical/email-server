@@ -13,7 +13,11 @@ const PORT = 3000;
 const upload = multer({ dest: 'uploads/' });
 
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors({
+  origin: '*', // 모든 출처 허용
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // 허용할 HTTP 메소드
+  credentials: true // 쿠키를 포함하여 요청할 수 있게 설정
+}));
 
 app.use((req, res, next) => {
   console.log('Received request: ', req.method, req.url);
@@ -30,7 +34,27 @@ const announcementSchema = new mongoose.Schema({
   dateTime: String
 });
 
+const userSchema = new mongoose.Schema({
+  username: String,
+  password: String,
+  name: String
+});
+
+const clockLogsSchema = new mongoose.Schema({
+  timestamp: Date,
+  type: String,
+  note: String,
+  username: String,
+  clockin: Date,
+  clockout: Date,
+  breakin: Date,
+  breakout: Date
+});
+
 const Announcement = mongoose.model('Announcement', announcementSchema);
+const User = mongoose.model('User', userSchema);
+const clocklog = mongoose.model('clocklogs', clockLogsSchema);
+
 
 app.get('/announcements', async (req, res) => {
   const announcements = await Announcement.find();
@@ -41,6 +65,115 @@ app.post('/announcements', async (req, res) => {
   const newAnnouncement = new Announcement(req.body);
   await newAnnouncement.save();
   res.json(newAnnouncement);
+});
+
+// 출근 시간 저장
+app.post('/clocklogs/clockin', async (req, res) => {
+  console.log('Clock-in request received:', req.body);
+  try {
+    const { username } = req.body;
+    if (!username) {
+      return res.status(400).send('Username is required');
+    }
+    const newClockIn = new clocklog({
+      username: username,
+      clockin: new Date(), // 현재 시간을 출근 시간으로 저장
+      type: 'clockin'
+    });
+
+    await newClockIn.save();
+    res.status(201).json(newClockIn); // 201 Created 응답 코드 사용
+  } catch (error) {
+    console.error('Error saving clock in:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// 퇴근 시간 저장
+app.post('/clocklogs/clockout', async (req, res) => {
+  console.log('Clock-out request received:', req.body);
+  try {
+    const { username } = req.body;
+    if (!username) {
+      return res.status(400).send('Username is required');
+    }
+    const lastClockIn = new clocklog(
+      { 
+        username: username,
+        clockout: new Date(), // 현재 시간을 출근 시간으로 저장
+        type: 'clockout'
+      }
+    );
+  await lastClockIn.save();
+    res.status(201).json(lastClockIn); // 201 Created 응답 코드 사용
+  } catch (error) {
+    console.error('Error saving clock out:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// 休憩開始 시간 저장
+app.post('/clocklogs/breakin', async (req, res) => {
+  console.log('break-in request received:', req.body);
+  try {
+    const { username } = req.body;
+    if (!username) {
+      return res.status(400).send('Username is required');
+    }
+    const newClockBreakIn = new clocklog({
+      username: username,
+      breakin: new Date(), // 현재 시간을 출근 시간으로 저장
+      type: 'clockin'
+    });
+
+    await newClockBreakIn.save();
+    res.status(201).json(newClockBreakIn); // 201 Created 응답 코드 사용
+  } catch (error) {
+    console.error('Error saving clock in:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// 休憩終了 시간 저장
+app.post('/clocklogs/breakout', async (req, res) => {
+  console.log('break-out request received:', req.body);
+  try {
+    const { username } = req.body;
+    if (!username) {
+      return res.status(400).send('Username is required');
+    }
+    const lastClockBreakOut = new clocklog(
+      { 
+        username: username,
+        breakout: new Date(), // 현재 시간을 출근 시간으로 저장
+        type: 'clockout'
+      }
+    );
+  await lastClockBreakOut.save();
+    res.status(201).json(lastClockBreakOut); // 201 Created 응답 코드 사용
+  } catch (error) {
+    console.error('Error saving clock out:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.get('/user', async (req, res) => {
+  console.log('User endpoint hit'); // Add this line
+  try {
+    const userinfo = await User.find();
+    console.log('Retrieved users:', userinfo); // 여기서 데이터를 콘솔에 출력
+    res.json(userinfo);
+  } catch (error) {
+    console.error('Error retrieving users:', error);
+    res.status(500).send('Error retrieving users');
+  }
+});
+
+// 로그인 API
+app.post('/user', async (req, res) => {
+  const { username, password } = req.body;
+
+  res.json({ username: username, password: password });
 });
 
 app.delete('/announcements/:id', async (req, res) => {
